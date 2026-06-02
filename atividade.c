@@ -1,229 +1,48 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
+import cv2
+import os
 
-#define size 100
+# Criar pasta para salvar as fotos se ela não existir
+if not os.path.exists('banco_faces'):
+    os.makedirs('banco_faces')
 
-//===============================//
-struct Livro{
-    int codigo;
-    char livro[size];
-    char autor[size];
-    int anoPubli;
-};
+video = cv2.VideoCapture(0)
+face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 
-struct Biblioteca{
-    int numLivros;
-    struct Livro livros[size];
-};
-//==============================//
+id_usuario = 1
+amostra = 1
+numero_max_amostras = 30
 
-//*****************************//
-int apresentar(){
-    int resp;
-    for(int n = 0; n < 31; n ++){
-        printf("--");
-    }
-    printf("O que você deseja fazer?\n");
-    printf("Digite 1 para adicionar um livro à biblioteca\n");
-    printf("Digite 2 para ver os livros disponíveis na biblioteca\n");
-    printf("Digite 3 para remover um livro da biblioteca\n");
-    printf("Digite 4 para buscar um livro na biblioteca\n");
-    printf("Digite 5 para sair\n");
-    scanf("%d", &resp);
+print("Olhe para a câmera. Capturando fotos...")
+#abre a câmera para gravação e captura de rosto, armazena as fotos de cada frame na pasta de fotos
+while True:
+    sucesso, frame = video.read()
+    if not sucesso:
+        break
 
-    if(resp > 5 || resp < 1){
-        printf("Opção inválida\n");
-        return -1;
-    }
-    return resp;
-}
+    frame_cinza = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    rostos = face_cascade.detectMultiScale(frame_cinza, 1.3, 5)
 
-int perguntar(){
-    unsigned int resp = -1;
-    printf("Digite 1 para buscar livro por título \n");
-    printf("Digite 2 para buscar livro por código \n");
+    for (x, y, largura, altura) in rostos:
+        # Recortar o rosto e redimensionar para um tamanho padrão
+        rosto_recortado = frame_cinza[y:y + altura, x:x + largura]
+        rosto_redimensionado = cv2.resize(rosto_recortado, (220, 220))
+        
+        # Salvar a imagem na pasta com o formato: usuario.id.amostra.jpg
+        caminho_foto = f"banco_faces/usuario.{id_usuario}.{amostra}.jpg"
+        cv2.imwrite(caminho_foto, rosto_redimensionado)
+        print(f" Foto {amostra} salva com sucesso!")
+        
+        cv2.rectangle(frame, (x, y), (x + largura, y + altura), (0, 255, 0), 2)
+        amostra += 1
 
-    scanf("%d", &resp);
-    if(resp != 1 && resp != 2){
-        printf("Opção inválida, tentar novamente\n");
-        return -1;
-    }
+    cv2.imshow("Cadastrando Rosto", frame)
+    cv2.waitKey(100) # Pequena pausa entre as fotos
 
-    return resp;
-}
-//******************************//
+    # Para se atingir o máximo de amostras ou apertar 'q'
+    if amostra > numero_max_amostras or cv2.waitKey(1) & 0xFF == ord('q'):
+        break
 
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
-void listar(struct Biblioteca *p_Bibl){
-    if(p_Bibl->numLivros == 0){
-        printf("Não há livros na biblioteca para serem listados\n");
-        return;
-    }
-    for(int n = 0; n < p_Bibl->numLivros; n++){
-        printf("Código: %d\n", p_Bibl->livros[n].codigo);
-        printf("Livro: %s\n", p_Bibl->livros[n].livro);
-        printf("Autor: %s\n", p_Bibl->livros[n].autor);
-        printf("Data publicação: %d\n", p_Bibl->livros[n].anoPubli);
-    }
-}
-
-int buscar_livro_nome(struct Biblioteca *livrus){
-    char tit[size];
-    scanf(" %[^\n]", tit);
-
-    for(int i = 0; i < livrus->numLivros; i++){
-        int comp = strcmp(tit, livrus->livros[i].livro);
-        if(comp == 0){
-            printf("Livro encontrado\n");
-            printf("Título: %s\n", livrus->livros[i].livro);
-            printf("Código: %d\n", livrus->livros[i].codigo);
-            printf("Autor: %s\n", livrus->livros[i].autor);
-            printf("Publicação: %d\n", livrus->livros[i].anoPubli);
-            return i;
-        } else if(i == livrus->numLivros-1){
-            printf("Livro não encontrado\n");
-            return -1;
-        }
-    }
-    return -1;
-}
-
-int buscar_livro_codigo(struct Biblioteca *livrus){
-    int codigo;
-    scanf("%d", &codigo);
-    for(int i = 0; i < livrus->numLivros; i++){
-        if(livrus->livros[i].codigo == codigo){
-            printf("Livro encontrado\n");
-            printf("Título: %s\n", livrus->livros[i].livro);
-            printf("Código: %d\n", livrus->livros[i].codigo);
-            printf("Autor: %s\n", livrus->livros[i].autor);
-            printf("Publicação: %d\n", livrus->livros[i].anoPubli);
-            return i;
-        }
-    }
-    printf("Livro não encontrado\n");
-    return -1;
-}
-
-void buscar(struct Biblioteca *livrus){
-    if(livrus->numLivros == 0){
-        printf("Não há livros na biblioteca\n");
-        return;
-    }
-
-    int resp = perguntar();
-
-    if(resp == 1){
-        printf("Digite o título do livro que deseja buscar: \n");
-        buscar_livro_nome(livrus);
-    } else {
-        printf("Digite o código do livro que deseja buscar: \n");
-        buscar_livro_codigo(livrus);
-    }
-}
-//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@//
-
-//>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>//
-struct Biblioteca *remover(struct Biblioteca *biblioteca){
-    if(biblioteca->numLivros == 0){
-        printf("Não há livros na biblioteca\n");
-        return biblioteca;
-    }
-
-    int resp = perguntar();
-    if (resp == -1){
-        printf("Opção inválida\n");
-        return biblioteca;
-    }
-
-    int livr_deletar;
-
-    if(resp==1){
-        printf("Digite o nome do livro que deseja deletar: \n");
-        livr_deletar = buscar_livro_nome(biblioteca);
-    } else {
-        printf("Digite o código do livro que deseja deletar: \n");
-        livr_deletar = buscar_livro_codigo(biblioteca);
-    }
-
-    if(livr_deletar == -1){
-        printf("Não foi possível deletar, livro não encontrado.\n");
-        return biblioteca;
-    }
-
-    printf("Deseja realmente deletar esse livro? : \n");
-    printf("1 - Para sim\n");
-    printf("2 - Para cancelar\n");
-    scanf("%d", &resp);
-
-    if(resp == 1){
-        for(int i = livr_deletar; i < biblioteca->numLivros - 1; i++){
-            biblioteca->livros[i] = biblioteca->livros[i + 1];
-        }
-        biblioteca->numLivros--;
-        printf("Livro deletado com sucesso\n");
-    } else {
-        printf("Ação cancelada\n");
-    }
-
-    return biblioteca;
-}
-//>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>//
-
-//÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷//
-struct Biblioteca *adicionar(struct Biblioteca *p_Bibl, struct Livro *p_Liv, int cont){
-    printf("Nome do livro: ");
-    scanf(" %[^\n]", p_Liv->livro);
-    printf("Código do livro: ");
-    scanf("%d", &p_Liv->codigo);
-    printf("Autor do livro: ");
-    scanf(" %[^\n]", p_Liv->autor);
-    printf("Ano de publicação do livro: ");
-    scanf("%d", &p_Liv->anoPubli);
-    getchar();
-    p_Bibl->numLivros = cont+1;
-    p_Bibl->livros[cont] = *p_Liv;
-    return p_Bibl;
-}
-//÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷÷//
-
-int main(){
-    int opcao = -1;
-    unsigned int cont = 0;
-
-    struct Biblioteca *p_Bibl = (struct Biblioteca*) calloc(1, sizeof(struct Biblioteca));
-    struct Livro *p_Liv = (struct Livro*) calloc(1, sizeof(struct Livro));
-
-    while(opcao != 5){
-        opcao = apresentar();
-
-        if(opcao == -1){
-            continue;
-        }
-
-        switch(opcao){
-            case 1:
-                p_Bibl = adicionar(p_Bibl, p_Liv, cont);
-                cont++;
-                break;
-            case 2:
-                listar(p_Bibl);
-                break;
-            case 3:
-                p_Bibl = remover(p_Bibl);
-                break;
-            case 4:
-                buscar(p_Bibl);
-                break;
-            case 5:
-                printf("Saindo do programa...\n");
-                break;
-        }
-    }
-
-    free(p_Liv);
-    free(p_Bibl);
-    return 0;
-}
+print("Cadastro concluído!")
+video.release()
+cv2.destroyAllWindows()
+    
