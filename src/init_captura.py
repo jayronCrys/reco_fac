@@ -2,13 +2,13 @@ import os
 import sys
 
 try:
-    from src.padronizado_nomes_imgs import organizar_fotos
+    from src.padroniza_nomes_imgs import organizar_fotos
 except ImportError:
     sys.exit(1)
 
 
 try:
-    from src.def_ import capturar_da_webcam
+    from src.def_usuarios import capturar_da_webcam
 except ImportError:
     sys.exit(1)
 
