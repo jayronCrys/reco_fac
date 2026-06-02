@@ -2,13 +2,13 @@ import os
 import sys
 
 try:
-    from src.padroniza_nomes_imgs import organizar_fotos
+    from src.create_db.padroniza_nomes_imgs import organizar_fotos
 except ImportError:
     sys.exit(1)
 
 
 try:
-    from src.def_usuarios import capturar_da_webcam
+    from src.crete_db.def_usuarios import capturar_da_webcam
 except ImportError:
     sys.exit(1)
 
