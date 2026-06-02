@@ -13,7 +13,6 @@ def organizar_fotos(pasta_origem, id_usuario=1):
         os.makedirs(pasta_destino)
         print(f"Pasta '{pasta_destino}' criada com sucesso.")
 
-
     # Listar todos os arquivos da pasta de origem
     try:
         arquivos = os.listdir(pasta_origem)
