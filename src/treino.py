@@ -12,21 +12,19 @@ def buscar_imagens_e_ids():
     ids = []
 
     for caminho in caminhos_imagens:
-        # 1. Carrega a imagem em escala de cinza
+        # escala de cinza
         imagem_completa = cv2.imread(caminho, cv2.IMREAD_GRAYSCALE)
         
-        # Extrai o ID do arquivo
         id_usuario = int(os.path.split(caminho)[-1].split(".")[1])
 
-        # 2. AQUI ENTRA O CASCADE CLASSIFIER: Ele busca os rostos na imagem
+        # busca os rostos na imagem
         faces_detectadas = face_cascade.detectMultiScale(imagem_completa, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
 
-        # 3. Para cada rosto encontrado (geralmente um por foto no seu banco)
         for (x, y, largura, altura) in faces_detectadas:
             # Recorta a imagem para pegar APENAS a região do rosto
             rosto_recortado = imagem_completa[y:y+altura, x:x+largura]
             
-            # Adiciona apenas o recorte nas listas
+            # Adiciona o recorte nas listas
             faces.append(rosto_recortado)
             ids.append(id_usuario)
 
